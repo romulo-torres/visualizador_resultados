@@ -14,19 +14,17 @@ with open("dados.jsonl", "r", encoding="utf-8") as f:
 
 # ===== selecionar exemplo =====
 ids = [item["id"] for item in dados]
-id_escolhido = st.selectbox(
+id_escolhido = st.radio(
     "Escolha o exemplo", 
     ids,
-    index=0
     )
 
 item = next(x for x in dados if x["id"] == id_escolhido)
 
 # ===== selecionar tipo =====
-tipo = st.selectbox(
+tipo = st.radio(
     "Tipo de perturbação",
-    ["original", "complex", "nl", "missing"],
-    index=0
+    ["original", "complex", "nl", "missing"]
 )
 
 # ===== pegar dados =====
@@ -71,4 +69,8 @@ with col3:
 
 # ===== resposta completa =====
 st.subheader("🧠 Resposta completa")
-st.text_area("", texto, height=400, disabled=True)
+st.text_area("", texto, height=400)
+
+if st.button("📋 Copiar resposta completa"):
+    st.write("Copie abaixo:")
+    st.code(texto, language="text")
