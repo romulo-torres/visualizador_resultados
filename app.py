@@ -6,9 +6,15 @@ st.set_page_config(layout="wide")
 
 st.title("🔍 Visualizador de Respostas LLM")
 
+# ===== selecionar arquivo =====
+arquivo = st.radio(
+    "Escolha o dataset",
+    ["dados.jsonl", "dados2.jsonl"]
+)
+
 # ===== carregar JSONL =====
 dados = []
-with open("dados.jsonl", "r", encoding="utf-8") as f:
+with open(arquivo, "r", encoding="utf-8") as f:
     for linha in f:
         dados.append(json.loads(linha))
 
