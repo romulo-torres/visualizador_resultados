@@ -9,7 +9,7 @@ st.title("🔍 Visualizador de Respostas LLM")
 # ===== selecionar arquivo =====
 arquivo = st.radio(
     "Escolha o dataset",
-    ["dados.jsonl", "dados2.jsonl"]
+    ["dados.jsonl", "dados2.jsonl", "dados_llama-instruct.jsonl"]
 )
 
 # ===== carregar JSONL =====
