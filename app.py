@@ -97,6 +97,48 @@ h2, h3 { font-family: 'Syne', sans-serif !important; color: #c8cdd8 !important; 
     transition: width .4s ease;
 }
 
+/* ---- ranking table ---- */
+.rank-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+}
+.rank-table th {
+    background: #141720;
+    color: #555c72;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 10px;
+    padding: 10px 14px;
+    border-bottom: 1px solid #1e2130;
+    text-align: left;
+}
+.rank-table td {
+    padding: 9px 14px;
+    border-bottom: 1px solid #141720;
+    color: #b0b8cc;
+    vertical-align: middle;
+}
+.rank-table tr:hover td { background: #13161f; }
+.rank-table tr.current-row td { background: #1a1e2c; border-left: 3px solid #f5c842; }
+.rank-medal { font-size: 16px; }
+.rank-time-bar-bg {
+    background: #1e2130;
+    border-radius: 3px;
+    height: 6px;
+    width: 120px;
+    display: inline-block;
+    vertical-align: middle;
+    overflow: hidden;
+}
+.rank-time-bar-fill {
+    height: 6px;
+    border-radius: 3px;
+    display: inline-block;
+}
+.rank-correct { color: #4ecb8a; font-weight: 600; }
+.rank-wrong   { color: #e05c5c; font-weight: 600; }
+
 /* ---- selectbox / number_input ---- */
 [data-baseweb="select"] > div,
 [data-baseweb="input"] > div {
@@ -183,6 +225,15 @@ def bar(value: float, max_val: float, color: str) -> str:
     return (
         f'<div class="cx-bar-bg">'
         f'<div class="cx-bar-fill" style="width:{pct}%;background:{color};"></div>'
+        f'</div>'
+    )
+
+
+def time_bar_html(value: float, max_val: float, color: str = "#f5c842") -> str:
+    pct = min(100, int(value / max_val * 100)) if max_val > 0 else 0
+    return (
+        f'<div class="rank-time-bar-bg">'
+        f'<div class="rank-time-bar-fill" style="width:{pct}%;background:{color};"></div>'
         f'</div>'
     )
 
@@ -328,9 +379,14 @@ st.markdown("---")
 
 
 # ============================================================
-# TABS: Métricas | Complexidade | Resposta completa
+# TABS: Métricas | Complexidade | Resposta completa | Ranking de Tempo
 # ============================================================
-tab1, tab2, tab3 = st.tabs(["📊 Métricas de geração", "🧩 Complexidade", "🧠 Resposta completa"])
+tab1, tab2, tab3, tab4 = st.tabs([
+    "📊 Métricas de geração",
+    "🧩 Complexidade",
+    "🧠 Resposta completa",
+    "⏱ Ranking de Tempo",
+])
 
 # ---------- TAB 1: Métricas de geração ----------
 with tab1:
@@ -440,14 +496,6 @@ with tab3:
     if not texto:
         st.warning("Sem texto gerado para esta combinação.")
     else:
-        # highlight do \boxed na resposta
-        def highlight_boxed(t: str) -> str:
-            return re.sub(
-                r'(\\boxed\{.*?\})',
-                r'**\1**',
-                t
-            )
-
         st.markdown(
             f'<div class="resp-box">{texto}</div>',
             unsafe_allow_html=True,
@@ -458,3 +506,169 @@ with tab3:
         with bcol1:
             if st.button("📋 Copiar (código)"):
                 st.code(texto, language="text")
+
+
+# ---------- TAB 4: Ranking de Tempo ----------
+with tab4:
+    st.markdown("")
+
+    # Detectar todos os tipos disponíveis no dataset inteiro
+    todos_tipos = []
+    for t in ["original", "complex", "nl", "missing", "shuffled", "junto", "irrelevant", "negation", "contradiction"]:
+        if any(f"time_{t}" in d for d in dados_filtrados):
+            todos_tipos.append(t)
+
+    if not todos_tipos:
+        st.warning("Nenhum campo `time_*` encontrado nos dados filtrados.")
+    else:
+        # Controles do ranking
+        rc1, rc2, rc3 = st.columns([2, 2, 2])
+        with rc1:
+            tipo_rank = st.selectbox(
+                "Perturbação",
+                todos_tipos,
+                index=todos_tipos.index(tipo) if tipo in todos_tipos else 0,
+                key="rank_tipo",
+            )
+        with rc2:
+            ordem = st.radio(
+                "Ordem",
+                ["⬆ Crescente (mais rápido)", "⬇ Decrescente (mais lento)"],
+                horizontal=True,
+                key="rank_ordem",
+            )
+        with rc3:
+            n_show = st.number_input(
+                "Exibir top N (0 = todos)",
+                min_value=0,
+                max_value=len(dados_filtrados),
+                value=min(50, len(dados_filtrados)),
+                step=10,
+                key="rank_n",
+            )
+
+        crescente = "Crescente" in ordem
+
+        # Montar lista ordenada
+        registros = []
+        for d in dados_filtrados:
+            t_val = d.get(f"time_{tipo_rank}")
+            if t_val is not None:
+                p_val = d.get(f"p_{tipo_rank}", extrair_boxed(d.get(f"txt_{tipo_rank}", "")))
+                gt_val = d.get("gt", "—")
+                correto = str(p_val).lower() == str(gt_val).lower()
+                registros.append({
+                    "id":      d["id"],
+                    "time":    float(t_val),
+                    "pred":    str(p_val),
+                    "gt":      str(gt_val),
+                    "correto": correto,
+                    "tokens":  d.get(f"tokens_{tipo_rank}"),
+                    "tps":     d.get(f"tps_{tipo_rank}"),
+                })
+
+        if not registros:
+            st.warning(f"Nenhum exemplo com `time_{tipo_rank}` nos dados filtrados.")
+        else:
+            registros.sort(key=lambda x: x["time"], reverse=not crescente)
+
+            if n_show and n_show > 0:
+                registros_show = registros[:n_show]
+            else:
+                registros_show = registros
+
+            max_time = max(r["time"] for r in registros)
+            total = len(registros)
+            n_corretos = sum(1 for r in registros if r["correto"])
+
+            # Sumário
+            s1, s2, s3, s4 = st.columns(4)
+            with s1:
+                st.metric("Exemplos com dados", total)
+            with s2:
+                st.metric("Acurácia", f"{100*n_corretos/total:.1f}%" if total else "—")
+            with s3:
+                tempo_medio = sum(r["time"] for r in registros) / total if total else 0
+                st.metric("Tempo médio (s)", f"{tempo_medio:.2f}")
+            with s4:
+                st.metric("Tempo máx (s)", f"{max_time:.2f}")
+
+            st.markdown("")
+
+            # Medalhas para top 3
+            medals = {0: "🥇", 1: "🥈", 2: "🥉"}
+
+            # Construir tabela HTML
+            linhas = []
+            for i, r in enumerate(registros_show):
+                is_current = (r["id"] == id_escolhido)
+                row_class  = "current-row" if is_current else ""
+                medal      = medals.get(i, "") if crescente else medals.get(total - 1 - (total - len(registros_show) + i), "")
+                if not crescente:
+                    medal = medals.get(i, "")
+
+                cor_barra = "#4ecb8a" if r["correto"] else "#e05c5c"
+                barra_html = time_bar_html(r["time"], max_time, cor_barra)
+
+                correto_html = (
+                    '<span class="rank-correct">✓</span>'
+                    if r["correto"]
+                    else '<span class="rank-wrong">✗</span>'
+                )
+
+                tps_str    = f"{r['tps']:.1f}" if r["tps"] else "—"
+                tokens_str = f"{int(r['tokens']):,}" if r["tokens"] else "—"
+                rank_num   = i + 1
+
+                linhas.append(
+                    f"""<tr class="{row_class}">
+                        <td style="color:#555c72;width:40px;">{rank_num}</td>
+                        <td style="width:28px;" class="rank-medal">{medal}</td>
+                        <td style="font-weight:600;color:{'#f5c842' if is_current else '#c8cdd8'};">
+                            {'› ' if is_current else ''}{r['id']}
+                        </td>
+                        <td>
+                            <span style="font-weight:600;color:#f5f6f8;">{r['time']:.3f}s</span>
+                            &nbsp; {barra_html}
+                        </td>
+                        <td>{badge_html(r['gt'])}</td>
+                        <td>{badge_html(r['pred'])}</td>
+                        <td>{correto_html}</td>
+                        <td style="color:#555c72;">{tokens_str}</td>
+                        <td style="color:#555c72;">{tps_str}</td>
+                    </tr>"""
+                )
+
+            tabela_html = f"""
+            <table class="rank-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th></th>
+                        <th>ID</th>
+                        <th>Tempo</th>
+                        <th>GT</th>
+                        <th>Pred</th>
+                        <th>✓</th>
+                        <th>Tokens</th>
+                        <th>tok/s</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {''.join(linhas)}
+                </tbody>
+            </table>
+            """
+
+            st.markdown(
+                f'<div style="overflow-x:auto;max-height:600px;overflow-y:auto;">{tabela_html}</div>',
+                unsafe_allow_html=True,
+            )
+
+            if is_current_in_range := any(r["id"] == id_escolhido for r in registros_show):
+                pass
+            else:
+                # Mostrar posição do exemplo atual mesmo fora do range exibido
+                pos = next((i + 1 for i, r in enumerate(registros) if r["id"] == id_escolhido), None)
+                if pos:
+                    st.caption(f"ℹ️ O exemplo atual `{id_escolhido}` está na posição **{pos}** de {total} (fora do top {n_show} exibido).")
