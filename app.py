@@ -248,7 +248,7 @@ with st.sidebar:
     # --- dataset ---
     st.markdown("**Dataset**")
     arquivos_disponiveis = [
-        f for f in ["deepseek.jsonl", "llama.jsonl"]
+        f for f in ["deepseek_consertado.jsonl", "llama.jsonl"]
         if os.path.exists(f)
     ]
     if not arquivos_disponiveis:
