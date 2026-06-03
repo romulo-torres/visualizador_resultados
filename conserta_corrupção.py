@@ -135,5 +135,12 @@ if __name__ == "__main__":
         sys.exit(1)
 
     input_path, output_path = sys.argv[1], sys.argv[2]
-    n = fix_jsonl(input_path, output_path)
+
+    TEXT_FIELDS = [
+        "txt_original", "txt_complex", "txt_nl", "txt_shuffled",
+        "txt_junto", "txt_irrelevant", "txt_contradiction",
+        "txt_negation", "txt_missing"
+    ]
+
+    n = fix_jsonl(input_path, output_path, fields=TEXT_FIELDS)
     print(f"✓ {n} registros processados → {output_path}")
