@@ -167,8 +167,8 @@ FEATURED_IDS = [49, 53, 81, 84, 88, 126, 158, 166, 192, 200]
 # outro lugar relativo a onde o streamlit roda -- essas pastas foram criadas
 # na maquina que rodou a geracao (deepseek-pibic) e podem precisar ser
 # copiadas (scp/rsync) para onde este app roda.
-PROMPT_LOG_DIR_DEFAULT_LLAMA = "logs_llm10ids"
-PROMPT_LOG_DIR_DEFAULT_LRM   = "logs_rerun_10ids"
+PROMPT_LOG_DIR_DEFAULT_LLAMA = "logs_llm"
+PROMPT_LOG_DIR_DEFAULT_LRM   = "logs_lrm"
 
 
 # ============================================================
