@@ -1,0 +1,154 @@
+ID: 81
+TASK: contradiction
+LABEL EXTRAIDO: True
+TOKENS_GERADOS: 6106
+TOKENS_POR_SEGUNDO: 7.94
+TRUNCADO_MAX_NEW_TOKENS: False
+INPUT_LEN_TOKENS: 205
+======================================================================
+PROMPT ENVIADO (texto completo apos apply_chat_template):
+----------------------------------------------------------------------
+<｜begin▁of▁sentence｜><｜User｜>You are a logic expert.
+
+Given the following premises and a conclusion, determine whether the conclusion logically follows from the premises.
+
+Premises:
+- NOT (forall x (Product(x) AND From(x, bakedByMelissa) -> Cupcake(x)))
+- Spicy(driedThaiChili) OR MalaHotpot(driedThaiChili) OR NOT BakedSweet(driedThaiChili)
+- forall x (BakedSweet(x) -> NOT Spicy(x))
+- forall x (MalaHotpot(x) -> Spicy(x))
+- forall x (Cupcake(x) -> BakedSweet(x))
+- forall x (Product(x) AND From(x, bakedByMelissa) -> Cupcake(x))
+
+Conclusion:
+NOT (Product(driedThaiChili) AND From(driedThaiChili, bakedByMelissa)) AND NOT BakedSweet(driedThaiChili)
+
+Put your final answer within \boxed{True}, \boxed{False}, or \boxed{Uncertain}.<｜Assistant｜><think>
+
+======================================================================
+RESPOSTA DO MODELO (texto decodificado, ja limpo de bpe):
+----------------------------------------------------------------------
+
+Okay,ĠsoĠIĠhaveĠthisĠlogicĠproblemĠhere,ĠandĠIĠneedĠtoĠfigureĠoutĠifĠtheĠconclusionĠlogicallyĠfollowsĠfromĠtheĠpremises.ĠLetĠmeĠtryĠtoĠbreakĠitĠdownĠstepĠbyĠstep.
+
+First,ĠletĠmeĠlistĠoutĠallĠtheĠpremisesĠandĠtheĠconclusionĠtoĠhaveĠthemĠclearĠinĠmyĠmind.
+
+Premises:
+1.ĠNOTĠ(forallĠxĠ(Product(x)ĠANDĠFrom(x,ĠbakedByMelissa)Ġ->ĠCupcake(x)))
+2.ĠSpicy(driedThaiChili)ĠORĠMalaHotpot(driedThaiChili)ĠORĠNOTĠBakedSweet(driedThaiChili)
+3.ĠforallĠxĠ(BakedSweet(x)Ġ->ĠNOTĠSpicy(x))
+4.ĠforallĠxĠ(MalaHotpot(x)Ġ->ĠSpicy(x))
+5.ĠforallĠxĠ(Cupcake(x)Ġ->ĠBakedSweet(x))
+6.ĠforallĠxĠ(Product(x)ĠANDĠFrom(x,ĠbakedByMelissa)Ġ->ĠCupcake(x))
+
+Conclusion:
+NOTĠ(Product(driedThaiChili)ĠANDĠFrom(driedThaiChili,ĠbakedByMelissa))ĠANDĠNOTĠBakedSweet(driedThaiChili)
+
+Alright,ĠsoĠIĠneedĠtoĠdetermineĠifĠtheĠconclusionĠfollowsĠfromĠtheseĠpremises.ĠLet'sĠstartĠbyĠunderstandingĠeachĠpart.
+
+PremiseĠ1:ĠNOTĠ(forallĠxĠ(Product(x)ĠANDĠFrom(x,ĠbakedByMelissa)Ġ->ĠCupcake(x)))
+ThisĠisĠsayingĠthatĠit'sĠnotĠtheĠcaseĠthatĠeveryĠxĠwhereĠProduct(x)ĠandĠFrom(x,ĠbakedByMelissa)Ġholds,ĠthenĠCupcake(x)ĠalsoĠholds.ĠSo,ĠthereĠexistsĠsomeĠxĠwhereĠProduct(x)ĠandĠFrom(x,ĠbakedByMelissa)ĠisĠtrue,ĠbutĠCupcake(x)ĠisĠfalse.ĠInĠotherĠwords,Ġthere'sĠaĠproductĠmadeĠbyĠMelissaĠthatĠisn'tĠaĠcupcake.
+
+PremiseĠ2:ĠSpicy(driedThaiChili)ĠORĠMalaHotpot(driedThaiChili)ĠORĠNOTĠBakedSweet(driedThaiChili)
+ThisĠisĠsayingĠthatĠeitherĠdriedThaiChiliĠisĠspicy,ĠorĠit'sĠMalaHotpotĠ(whichĠIĠthinkĠisĠaĠtypeĠofĠdish),ĠorĠit'sĠnotĠbakedĠsweet.ĠSo,ĠatĠleastĠoneĠofĠtheseĠmustĠbeĠtrue.
+
+PremiseĠ3:ĠforallĠxĠ(BakedSweet(x)Ġ->ĠNOTĠSpicy(x))
+IfĠsomethingĠisĠbakedĠsweet,ĠthenĠit'sĠnotĠspicy.
+
+PremiseĠ4:ĠforallĠxĠ(MalaHotpot(x)Ġ->ĠSpicy(x))
+IfĠsomethingĠisĠMalaHotpot,ĠthenĠit'sĠspicy.
+
+PremiseĠ5:ĠforallĠxĠ(Cupcake(x)Ġ->ĠBakedSweet(x))
+IfĠsomethingĠisĠaĠcupcake,ĠthenĠit'sĠbakedĠsweet.
+
+PremiseĠ6:ĠforallĠxĠ(Product(x)ĠANDĠFrom(x,ĠbakedByMelissa)Ġ->ĠCupcake(x))
+ThisĠisĠtheĠsameĠasĠpremiseĠ1ĠbutĠwithoutĠtheĠNOT.ĠWait,Ġactually,ĠpremiseĠ1ĠisĠtheĠnegationĠofĠthis.ĠSoĠpremiseĠ6ĠisĠtheĠpositiveĠstatement,ĠandĠpremiseĠ1ĠisĠtheĠnegationĠofĠit.ĠSo,ĠfromĠpremiseĠ6,ĠweĠcanĠinferĠthatĠforĠallĠx,ĠifĠxĠisĠaĠproductĠmadeĠbyĠMelissa,ĠthenĠxĠisĠaĠcupcake.ĠButĠpremiseĠ1ĠsaysĠthatĠthisĠisn'tĠtheĠcaseĠforĠatĠleastĠoneĠx.ĠSo,Ġthere'sĠaĠconflictĠhere.ĠWait,ĠbutĠhowĠcanĠbothĠbeĠtrue?ĠIfĠpremiseĠ6ĠisĠtrue,ĠthenĠpremiseĠ1ĠisĠfalse,ĠandĠviceĠversa.ĠButĠinĠlogic,ĠifĠweĠhaveĠbothĠpremises,ĠtheyĠcan'tĠbothĠbeĠtrue.ĠSo,ĠperhapsĠthisĠisĠaĠclueĠthatĠthere'sĠsomeĠcomplexityĠhere.
+
+ButĠwait,ĠtheĠpremisesĠareĠgiven,ĠsoĠIĠneedĠtoĠseeĠifĠtheĠconclusionĠfollowsĠregardlessĠofĠtheĠtruthĠofĠtheseĠpremises.ĠHmm,ĠmaybeĠI'mĠovercomplicating.
+
+LetĠmeĠthinkĠaboutĠtheĠconclusion:
+
+NOTĠ(Product(driedThaiChili)ĠANDĠFrom(driedThaiChili,ĠbakedByMelissa))ĠANDĠNOTĠBakedSweet(driedThaiChili)
+
+So,ĠtheĠconclusionĠisĠsayingĠtwoĠthings:
+
+1.ĠIt'sĠnotĠtheĠcaseĠthatĠdriedThaiChiliĠisĠaĠproductĠmadeĠbyĠMelissaĠandĠisĠaĠcupcake.ĠSo,ĠeitherĠit'sĠnotĠaĠproduct,ĠorĠit'sĠnotĠmadeĠbyĠMelissa,ĠorĠit'sĠnotĠaĠcupcake.
+
+2.ĠIt'sĠnotĠbakedĠsweet.
+
+Now,Ġlet'sĠseeĠifĠweĠcanĠconnectĠthisĠwithĠtheĠpremises.
+
+FromĠpremiseĠ6:ĠProduct(x)ĠANDĠFrom(x,ĠbakedByMelissa)Ġ->ĠCupcake(x).ĠSo,ĠifĠxĠisĠaĠproductĠmadeĠbyĠMelissa,ĠthenĠit'sĠaĠcupcake.ĠButĠpremiseĠ1ĠsaysĠthatĠthisĠimplicationĠdoesn'tĠholdĠforĠallĠx,ĠmeaningĠthereĠexistsĠanĠxĠwhereĠProduct(x)ĠandĠFrom(x,ĠbakedByMelissa)ĠisĠtrue,ĠbutĠCupcake(x)ĠisĠfalse.ĠSo,ĠthatĠxĠisĠdriedThaiChili,ĠIĠthink.
+
+Wait,ĠbecauseĠtheĠconclusionĠisĠaboutĠdriedThaiChili.ĠSo,ĠtheĠconclusionĠisĠspecificallyĠaboutĠthisĠx,ĠwhichĠisĠdriedThaiChili.
+
+So,Ġlet'sĠsee.ĠIfĠweĠhaveĠpremiseĠ6,ĠwhichĠisĠaĠuniversalĠstatement,ĠbutĠpremiseĠ1ĠnegatesĠit,ĠsoĠthereĠmustĠbeĠsomeĠxĠwhereĠitĠfails.ĠSo,ĠforĠdriedThaiChili,Ġit'sĠtheĠcaseĠthatĠProduct(driedThaiChili)ĠANDĠFrom(driedThaiChili,ĠbakedByMelissa)ĠisĠtrue,ĠbutĠCupcake(driedThaiChili)ĠisĠfalse.ĠSo,Ġthat'sĠexactlyĠwhatĠtheĠconclusion'sĠfirstĠpartĠisĠsaying:ĠNOTĠ(Product(driedThaiChili)ĠANDĠFrom(driedThaiChili,ĠbakedByMelissa)).ĠBecauseĠifĠit'sĠnotĠaĠcupcake,ĠthenĠtheĠimplicationĠfails,ĠsoĠtheĠantecedentĠmustĠbeĠtrueĠbutĠtheĠconsequentĠisĠfalse,ĠmakingĠtheĠimplicationĠfalse.
+
+Therefore,ĠtheĠfirstĠpartĠofĠtheĠconclusionĠfollowsĠfromĠpremiseĠ1ĠandĠpremiseĠ6.
+
+Now,ĠtheĠsecondĠpartĠofĠtheĠconclusionĠisĠNOTĠBakedSweet(driedThaiChili).ĠSo,ĠisĠthisĠnecessarilyĠtrue?
+
+LookingĠatĠtheĠpremises,ĠpremiseĠ5ĠsaysĠthatĠifĠsomethingĠisĠaĠcupcake,ĠthenĠit'sĠbakedĠsweet.ĠSo,ĠCupcake(x)Ġ->ĠBakedSweet(x).ĠButĠweĠhaveĠthatĠCupcake(driedThaiChili)ĠisĠfalseĠbecauseĠProduct(driedThaiChili)ĠANDĠFrom(driedThaiChili,ĠbakedByMelissa)ĠimpliesĠCupcake(driedThaiChili),ĠwhichĠisĠfalse.ĠSo,ĠtheĠantecedentĠisĠtrueĠ(sinceĠProductĠandĠFromĠhold),ĠbutĠtheĠconsequentĠisĠfalse.ĠTherefore,ĠtheĠimplicationĠisĠfalse,ĠmeaningĠthatĠthereĠexistsĠanĠxĠ(whichĠisĠdriedThaiChili)ĠwhereĠCupcake(x)ĠisĠfalse,ĠbutĠBakedSweet(x)ĠisĠtrue.ĠWait,Ġno.ĠBecauseĠtheĠimplicationĠisĠfalseĠonlyĠwhenĠtheĠantecedentĠisĠtrueĠandĠtheĠconsequentĠisĠfalse.ĠSo,ĠinĠthisĠcase,ĠsinceĠProductĠandĠFromĠareĠtrue,ĠbutĠCupcakeĠisĠfalse,ĠtheĠimplicationĠfails,ĠwhichĠwouldĠmeanĠthatĠtheĠconclusionĠofĠpremiseĠ5ĠisĠfalse.ĠButĠpremiseĠ5ĠisĠaĠuniversalĠstatement,ĠsoĠifĠit'sĠfalse,ĠitĠmeansĠthatĠthereĠexistsĠanĠxĠwhereĠCupcake(x)ĠisĠtrue,ĠbutĠBakedSweet(x)ĠisĠfalse.ĠButĠinĠourĠcase,ĠCupcake(x)ĠisĠfalse,ĠsoĠthatĠdoesn'tĠnecessarilyĠtellĠusĠanythingĠaboutĠBakedSweet(x).ĠHmm.
+
+Wait,ĠmaybeĠIĠneedĠtoĠthinkĠdifferently.ĠLet'sĠsee.ĠFromĠpremiseĠ3:ĠBakedSweet(x)Ġ->ĠNOTĠSpicy(x).ĠSo,ĠifĠsomethingĠisĠbakedĠsweet,Ġit'sĠnotĠspicy.
+
+FromĠpremiseĠ4:ĠMalaHotpot(x)Ġ->ĠSpicy(x).ĠSo,ĠifĠsomethingĠisĠMalaHotpot,Ġit'sĠspicy.
+
+FromĠpremiseĠ2:ĠSpicy(driedThaiChili)ĠORĠMalaHotpot(driedThaiChili)ĠORĠNOTĠBakedSweet(driedThaiChili).ĠSo,ĠatĠleastĠoneĠofĠtheseĠmustĠbeĠtrue.
+
+So,Ġlet'sĠconsiderĠtheĠpossibilitiesĠforĠdriedThaiChili.
+
+CaseĠ1:ĠSpicy(driedThaiChili)ĠisĠtrue.
+
+Then,ĠfromĠpremiseĠ3,ĠsinceĠBakedSweet(x)Ġ->ĠNOTĠSpicy(x),ĠifĠSpicyĠisĠtrue,ĠBakedSweetĠcanĠbeĠeitherĠtrueĠorĠfalse.ĠButĠfromĠpremiseĠ5,ĠifĠCupcake(x)ĠisĠtrue,ĠthenĠBakedSweet(x)ĠisĠtrue.ĠButĠweĠalreadyĠhaveĠthatĠCupcake(driedThaiChili)ĠisĠfalseĠbecauseĠofĠpremiseĠ1ĠandĠ6.ĠSo,ĠinĠthisĠcase,ĠsinceĠCupcakeĠisĠfalse,ĠBakedSweetĠcanĠbeĠeitherĠtrueĠorĠfalse.ĠButĠifĠSpicyĠisĠtrue,ĠBakedSweetĠcouldĠbeĠfalse,ĠmakingĠpremiseĠ2ĠtrueĠbecauseĠSpicyĠisĠtrue.ĠSo,Ġthat'sĠacceptable.
+
+CaseĠ2:ĠMalaHotpot(driedThaiChili)ĠisĠtrue.
+
+Then,ĠfromĠpremiseĠ4,Ġit'sĠspicy.ĠSo,ĠsameĠasĠcaseĠ1.
+
+CaseĠ3:ĠNOTĠBakedSweet(driedThaiChili)ĠisĠtrue.
+
+So,ĠBakedSweet(driedThaiChili)ĠisĠfalse.
+
+ButĠfromĠpremiseĠ5,ĠsinceĠCupcakeĠisĠfalse,ĠBakedSweetĠcanĠbeĠtrueĠorĠfalse.ĠIfĠit'sĠfalse,ĠthenĠit'sĠokayĠbecauseĠpremiseĠ5Ġdoesn'tĠrequireĠitĠtoĠbeĠtrue.
+
+ButĠwait,ĠfromĠpremiseĠ3,ĠifĠBakedSweetĠisĠfalse,ĠthenĠtheĠimplicationĠisĠtrueĠregardlessĠofĠSpicy.ĠSo,Ġit'sĠconsistent.
+
+ButĠtheĠconclusionĠsaysĠNOTĠBakedSweet(driedThaiChili).ĠSo,ĠifĠBakedSweetĠisĠfalse,ĠthenĠtheĠconclusionĠisĠtrue.
+
+ButĠfromĠpremiseĠ2,ĠweĠknowĠthatĠatĠleastĠoneĠofĠSpicy,ĠMalaHotpot,ĠorĠNOTĠBakedSweetĠmustĠbeĠtrue.ĠSo,ĠifĠBakedSweetĠisĠfalse,ĠthatĠsatisfiesĠpremiseĠ2.
+
+ButĠcanĠweĠconcludeĠthatĠBakedSweetĠisĠnecessarilyĠfalse?
+
+Wait,Ġno.ĠBecauseĠpremiseĠ2ĠonlyĠsaysĠthatĠatĠleastĠoneĠofĠthoseĠisĠtrue.ĠItĠdoesn'tĠmeanĠthatĠallĠothersĠmustĠbeĠfalse.ĠSo,ĠBakedSweetĠcouldĠbeĠtrueĠorĠfalse,ĠasĠlongĠasĠoneĠofĠtheĠotherĠoptionsĠisĠtrue.
+
+ButĠfromĠtheĠpremises,ĠcanĠweĠdeduceĠthatĠBakedSweet(driedThaiChili)ĠisĠfalse?
+
+LetĠmeĠthink.ĠWeĠknowĠthatĠCupcake(driedThaiChili)ĠisĠfalseĠbecauseĠofĠpremiseĠ1ĠandĠ6.ĠFromĠpremiseĠ5,ĠsinceĠCupcakeĠisĠfalse,ĠitĠdoesn'tĠtellĠusĠanythingĠaboutĠBakedSweet.ĠSo,ĠBakedSweetĠcouldĠbeĠtrueĠorĠfalse.
+
+ButĠfromĠpremiseĠ3,ĠifĠBakedSweetĠisĠtrue,ĠthenĠSpicyĠmustĠbeĠfalse.ĠSo,ĠifĠBakedSweetĠisĠtrue,ĠSpicyĠisĠfalse.ĠThen,ĠfromĠpremiseĠ4,ĠifĠMalaHotpotĠisĠtrue,ĠthenĠSpicyĠisĠtrue,ĠwhichĠwouldĠconflictĠwithĠSpicyĠbeingĠfalse.ĠSo,ĠifĠBakedSweetĠisĠtrue,ĠthenĠSpicyĠisĠfalse,ĠwhichĠmeansĠMalaHotpotĠmustĠbeĠfalse,ĠbecauseĠifĠMalaHotpotĠwereĠtrue,ĠSpicyĠwouldĠhaveĠtoĠbeĠtrue,ĠwhichĠcontradicts.ĠTherefore,ĠifĠBakedSweetĠisĠtrue,ĠMalaHotpotĠmustĠbeĠfalse.
+
+ButĠfromĠpremiseĠ2,ĠatĠleastĠoneĠofĠSpicy,ĠMalaHotpot,ĠorĠNOTĠBakedSweetĠmustĠbeĠtrue.ĠIfĠBakedSweetĠisĠtrue,ĠthenĠMalaHotpotĠmustĠbeĠfalse,ĠandĠSpicyĠmustĠbeĠfalseĠ(fromĠpremiseĠ3).ĠSo,ĠtheĠonlyĠoptionĠleftĠisĠthatĠNOTĠBakedSweetĠisĠfalse,ĠbutĠthat'sĠnotĠpossibleĠbecauseĠweĠassumedĠBakedSweetĠisĠtrue.ĠWait,Ġno.ĠWait,ĠifĠBakedSweetĠisĠtrue,ĠthenĠfromĠpremiseĠ2,ĠweĠneedĠatĠleastĠoneĠofĠSpicy,ĠMalaHotpot,ĠorĠNOTĠBakedSweetĠtoĠbeĠtrue.ĠButĠifĠBakedSweetĠisĠtrue,ĠthenĠNOTĠBakedSweetĠisĠfalse.ĠSo,ĠweĠneedĠeitherĠSpicyĠorĠMalaHotpotĠtoĠbeĠtrue.
+
+ButĠfromĠpremiseĠ4,ĠifĠMalaHotpotĠisĠtrue,ĠthenĠSpicyĠisĠtrue.ĠButĠifĠBakedSweetĠisĠtrue,ĠthenĠSpicyĠmustĠbeĠfalseĠ(fromĠpremiseĠ3).ĠSo,ĠifĠMalaHotpotĠisĠtrue,ĠSpicyĠisĠtrue,ĠwhichĠcontradictsĠwithĠSpicyĠbeingĠfalse.ĠTherefore,ĠifĠBakedSweetĠisĠtrue,ĠMalaHotpotĠmustĠbeĠfalse,ĠwhichĠwouldĠmeanĠthatĠSpicyĠmustĠbeĠfalseĠ(fromĠpremiseĠ4),ĠbutĠthenĠpremiseĠ2ĠrequiresĠthatĠeitherĠSpicy,ĠMalaHotpot,ĠorĠNOTĠBakedSweetĠisĠtrue.ĠSinceĠSpicyĠisĠfalse,ĠMalaHotpotĠisĠfalse,ĠandĠBakedSweetĠisĠtrue,ĠwhichĠmakesĠNOTĠBakedSweetĠfalse.ĠSo,ĠallĠthreeĠareĠfalse,ĠwhichĠviolatesĠpremiseĠ2.ĠTherefore,Ġit'sĠimpossibleĠforĠBakedSweetĠtoĠbeĠtrueĠbecauseĠitĠwouldĠleadĠtoĠaĠcontradiction.
+
+Therefore,ĠBakedSweet(driedThaiChili)ĠmustĠbeĠfalse.ĠHence,ĠtheĠsecondĠpartĠofĠtheĠconclusionĠisĠtrue.
+
+So,ĠbothĠpartsĠofĠtheĠconclusionĠfollowĠfromĠtheĠpremises.
+
+Wait,ĠletĠmeĠrecapĠtoĠmakeĠsureĠIĠdidn'tĠmissĠanything.
+
+FromĠpremiseĠ1ĠandĠ6,ĠweĠknowĠthatĠthereĠexistsĠanĠxĠ(driedThaiChili)ĠwhereĠProduct(x)ĠandĠFrom(x,ĠbakedByMelissa)ĠisĠtrue,ĠbutĠCupcake(x)ĠisĠfalse.ĠTherefore,ĠtheĠfirstĠpartĠofĠtheĠconclusionĠisĠtrue.
+
+FromĠpremiseĠ2,ĠweĠknowĠthatĠatĠleastĠoneĠofĠSpicy,ĠMalaHotpot,ĠorĠNOTĠBakedSweetĠisĠtrueĠforĠdriedThaiChili.
+
+IfĠweĠassumeĠBakedSweetĠisĠtrue,ĠthenĠfromĠpremiseĠ3,ĠSpicyĠmustĠbeĠfalse.ĠFromĠpremiseĠ4,ĠifĠMalaHotpotĠisĠtrue,ĠSpicyĠisĠtrue,ĠwhichĠcontradicts.ĠTherefore,ĠMalaHotpotĠmustĠbeĠfalse.ĠThen,ĠfromĠpremiseĠ2,ĠsinceĠSpicyĠandĠMalaHotpotĠareĠfalse,ĠBakedSweetĠmustĠbeĠtrue,ĠbutĠthatĠleadsĠtoĠaĠcontradictionĠbecauseĠthenĠpremiseĠ2ĠwouldĠrequireĠthatĠatĠleastĠoneĠisĠtrue,ĠbutĠifĠBakedSweetĠisĠtrue,ĠthenĠpremiseĠ2ĠisĠsatisfied,ĠbutĠwait,Ġno,ĠpremiseĠ2ĠisĠSpicyĠORĠMalaHotpotĠORĠNOTĠBakedSweet.ĠIfĠBakedSweetĠisĠtrue,ĠthenĠNOTĠBakedSweetĠisĠfalse.ĠSo,ĠweĠneedĠeitherĠSpicyĠorĠMalaHotpotĠtoĠbeĠtrue.ĠButĠifĠBakedSweetĠisĠtrue,ĠSpicyĠisĠfalse,ĠandĠMalaHotpotĠisĠfalse,ĠsoĠthatĠviolatesĠpremiseĠ2.ĠTherefore,ĠBakedSweetĠcannotĠbeĠtrue,ĠsoĠitĠmustĠbeĠfalse.
+
+Therefore,ĠbothĠpartsĠofĠtheĠconclusionĠareĠtrue.
+
+So,ĠtheĠconclusionĠlogicallyĠfollowsĠfromĠtheĠpremises.
+</think>
+
+TheĠconclusionĠlogicallyĠfollowsĠfromĠtheĠpremises.
+
+\boxed{True}

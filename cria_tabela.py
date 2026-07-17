@@ -19,8 +19,13 @@ O que ele faz, para cada arquivo (LLM e LRM):
      tabela só, já que essa é a comparação que normalmente importa.
   3) Verificação de predições idênticas entre transformações (bug de
      pipeline), separada por modelo.
-  4) Teste de McNemar (Original vs. cada perturbação), separado por modelo.
-  5) Tabela por tercis de nl_wc e por bins Q1-Q4 (nl_bin / fol_bin) --
+  4) Teste de McNemar (Original vs. cada perturbação), separado por modelo
+     -- usado para o '*' nas colunas de GANHO da Tabela 1 do paper.
+  5) Teste de McNemar PAREADO entre LLM e LRM, para cada campo_pred, usando
+     o mesmo id -- usado para o '*' nas colunas de ACURÁCIA (LLM ou LRM) da
+     Tabela 1 do paper (indica se a diferença entre os dois modelos, na
+     mesma condição, é estatisticamente significativa).
+  6) Tabela por tercis de nl_wc e por bins Q1-Q4 (nl_bin / fol_bin) --
      também impressa lado a lado (LLM vs LRM) quando os dois arquivos têm os
      mesmos IDs (o que deveria ser o caso, pois ambos vêm do mesmo FOLIO).
 
@@ -77,6 +82,56 @@ VALORES_ANTIGOS_LRM = {
 }
 VALORES_ANTIGOS_LLM = None  # ex.: {"p_original": 45.0, ...} se voce tiver
 
+# ==============================================================================
+# PLANILHA DE VALIDACAO (relevant_premise_validation.xlsx)
+# ==============================================================================
+DEFAULT_VALIDATION_XLSX = "../codigos_pibic/relevant_premise_validation.xlsx"
+
+def load_proven_missing(xlsx_path):
+    """Le a planilha de validacao manual e retorna {dataset_idx: new_label}
+    -- so para as linhas com relevant_found == True. new_label e o gabarito
+    correto na task 'missing' apos remover aquela premissa (normalmente
+    'Uncertain', mas lido dinamicamente, sem assumir isso fixo no codigo)."""
+    df = pd.read_excel(xlsx_path)
+    obrigatorias = {"dataset_idx", "relevant_found", "new_label"}
+    faltando = obrigatorias - set(df.columns)
+    if faltando:
+        raise ValueError(
+            f"A planilha {xlsx_path} nao tem as colunas esperadas: {faltando}. "
+            f"Colunas encontradas: {list(df.columns)}"
+        )
+    sub = df[df["relevant_found"] == True]
+    return {int(row["dataset_idx"]): row["new_label"] for _, row in sub.iterrows()}
+
+
+# Preenchido de verdade em main(), a partir da planilha.
+PROVEN_NEW_LABEL = {}
+
+
+def invert_label(gt):
+    """Inverte o rotulo logico: True<->False, Uncertain fica Uncertain."""
+    mapping = {"True": "False", "False": "True", "Uncertain": "Uncertain"}
+    return mapping.get(gt, gt)
+
+
+def gt_efetivo(row, campo_pred):
+    """Retorna o gt a ser usado na avaliacao. Igual ao gt original, exceto:
+      - p_missing nos ids com premissa comprovadamente removida (planilha)
+        -> new_label da planilha (normalmente 'Uncertain').
+      - p_negation em TODOS os ids -> inverte o gt (True<->False).
+      - p_contradiction em TODOS os ids -> 'Uncertain'."""
+    gt = row.get("gt")
+    if campo_pred == "p_missing":
+        idx = row.get("id")
+        if idx in PROVEN_NEW_LABEL:
+            return PROVEN_NEW_LABEL[idx]
+        return gt
+    if campo_pred == "p_negation":
+        return invert_label(gt)
+    if campo_pred == "p_contradiction":
+        return "Uncertain"
+    return gt
+
 
 # ==============================================================================
 # CARREGAMENTO
@@ -116,7 +171,7 @@ def acuracia(recs, campo_pred):
         if p is None or p == "SKIP":
             continue
         tot += 1
-        if p == r["gt"]:
+        if p == gt_efetivo(r, campo_pred):
             c += 1
     return c, tot, (100 * c / tot if tot else float("nan"))
 
@@ -209,7 +264,7 @@ def checar_predicoes_identicas(recs, label):
 
 
 # ==============================================================================
-# MCNEMAR -- por modelo
+# MCNEMAR -- por modelo (Original vs. cada perturbação)
 # ==============================================================================
 def mcnemar_manual(b, c, correcao_continuidade=True):
     n_disc = b + c
@@ -234,8 +289,13 @@ def teste_mcnemar_geral(recs, label, campo_base="p_original", alfa=0.05):
     print("=" * 70)
 
     df = pd.DataFrame(recs)
-    gt = df["gt"]
     base = df[campo_base]
+
+    # gt_base: gt efetivo para a coluna base (normalmente p_original, que
+    # nunca tem ajuste -- mas calculado de forma generica de qualquer jeito)
+    gt_base = df.apply(lambda r: gt_efetivo(r, campo_base), axis=1)
+
+    resultado = {}
 
     for campo in CAMPOS_PRED:
         if campo == campo_base or campo not in df.columns:
@@ -247,14 +307,21 @@ def teste_mcnemar_geral(recs, label, campo_base="p_original", alfa=0.05):
         if n == 0:
             continue
 
-        base_ok = (base[validos] == gt[validos])
-        pert_ok = (pert[validos] == gt[validos])
+        # gt_pert: gt efetivo para a perturbacao em questao -- diferente do
+        # gt normal apenas para p_missing (ids da planilha), p_negation
+        # (inverte True<->False em todos os ids) e p_contradiction (vira
+        # 'Uncertain' em todos os ids). Para as demais, e igual ao gt.
+        gt_pert = df.apply(lambda r: gt_efetivo(r, campo), axis=1)
+
+        base_ok = (base[validos] == gt_base[validos])
+        pert_ok = (pert[validos] == gt_pert[validos])
 
         b = int((base_ok & ~pert_ok).sum())
         c = int((~base_ok & pert_ok).sum())
 
         estat, p = mcnemar_manual(b, c)
-        sig = "*" if p < alfa else " "
+        sig = p < alfa
+        sig_str = "*" if sig else " "
 
         acc_base = 100 * base_ok.mean()
         acc_pert = 100 * pert_ok.mean()
@@ -265,10 +332,90 @@ def teste_mcnemar_geral(recs, label, campo_base="p_original", alfa=0.05):
         print(
             f"  {nome:26s} n={n:4d}  acc_orig={acc_base:6.2f}%  "
             f"acc_pert={acc_pert:6.2f}%  ganho={ganho:+6.1f}%  "
-            f"b={b:3d} c={c:3d}  estat={estat_str}  p={p:.4f} {sig}"
+            f"b={b:3d} c={c:3d}  estat={estat_str}  p={p:.4f} {sig_str}"
         )
 
+        resultado[campo] = (b, c, estat, p, sig)
+
     print(f"\n(*) p < {alfa}: diferença estatisticamente significativa (McNemar).")
+    return resultado
+
+
+# ==============================================================================
+# MCNEMAR -- PAREADO ENTRE LLM E LRM (mesma condição, mesmo id)
+# ==============================================================================
+def teste_mcnemar_llm_vs_lrm(recs_llm, recs_lrm, alfa=0.05):
+    """McNemar pareado LLM vs LRM, para cada campo_pred, usando o mesmo id.
+    b = LLM acerta e LRM erra | c = LRM acerta e LLM erra.
+
+    Usado para decidir o '*' nas colunas de ACURÁCIA da Tabela 1 do paper
+    (diferente do '*' nas colunas de GANHO, que vem de teste_mcnemar_geral
+    -- Original vs. Perturbação, dentro do mesmo modelo).
+
+    Retorna {campo_pred: (b, c, estat, p, sig_bool)}.
+    """
+    print("\n" + "=" * 70)
+    print("TESTE DE MCNEMAR -- LLM vs. LRM (pareado por id, mesmo campo_pred)")
+    print("=" * 70)
+
+    df_llm = pd.DataFrame(recs_llm)
+    df_lrm = pd.DataFrame(recs_lrm)
+
+    resultado = {}
+
+    for campo in CAMPOS_PRED:
+        if campo not in df_llm.columns or campo not in df_lrm.columns:
+            continue
+
+        # gt efetivo calculado separadamente em cada df (mesma regra em
+        # gt_efetivo; ids devem ser os mesmos nos dois arquivos, pois ambos
+        # vem do mesmo FOLIO, entao da no mesmo resultado)
+        tmp_llm = df_llm.copy()
+        tmp_lrm = df_lrm.copy()
+        tmp_llm["_gt_efetivo"] = tmp_llm.apply(lambda r: gt_efetivo(r, campo), axis=1)
+        tmp_lrm["_gt_efetivo"] = tmp_lrm.apply(lambda r: gt_efetivo(r, campo), axis=1)
+
+        merged = tmp_llm[["id", campo, "_gt_efetivo"]].merge(
+            tmp_lrm[["id", campo, "_gt_efetivo"]],
+            on="id", suffixes=("_llm", "_lrm")
+        )
+
+        validos = (merged[f"{campo}_llm"] != "SKIP") & (merged[f"{campo}_lrm"] != "SKIP")
+        sub = merged[validos]
+        n = len(sub)
+        if n == 0:
+            continue
+
+        correct_llm = sub[f"{campo}_llm"] == sub["_gt_efetivo_llm"]
+        correct_lrm = sub[f"{campo}_lrm"] == sub["_gt_efetivo_lrm"]
+
+        b = int((correct_llm & ~correct_lrm).sum())   # LLM acerta, LRM erra
+        c = int((~correct_llm & correct_lrm).sum())   # LRM acerta, LLM erra
+
+        estat, p = mcnemar_manual(b, c)
+        sig = p < alfa
+        sig_str = "*" if sig else " "
+
+        acc_llm = 100 * correct_llm.mean()
+        acc_lrm = 100 * correct_lrm.mean()
+
+        nome = NOMES_LEGIVEIS.get(campo, campo)
+        estat_str = "  exato " if np.isnan(estat) else f"{estat:7.3f}"
+        print(
+            f"  {nome:26s} n={n:4d}  acc_LLM={acc_llm:6.2f}%  "
+            f"acc_LRM={acc_lrm:6.2f}%  b={b:3d} c={c:3d}  "
+            f"estat={estat_str}  p={p:.4f} {sig_str}"
+        )
+
+        resultado[campo] = (b, c, estat, p, sig)
+
+    print(
+        f"\n(*) p < {alfa}: diferença estatisticamente significativa entre "
+        "LLM e LRM (McNemar pareado).\nConvenção sugerida p/ LaTeX: se "
+        "sig=True, colocar '*' na acurácia do modelo com MAIOR acurácia "
+        "nessa linha (não no ganho)."
+    )
+    return resultado
 
 
 # ==============================================================================
@@ -371,14 +518,75 @@ def tabela_combinada_por_bins(recs_llm, recs_lrm, campo_pred="p_original"):
 
 
 # ==============================================================================
+# GERAÇÃO DA LINHA LATEX (Tabela 1) COM OS DOIS TIPOS DE '*'
+# ==============================================================================
+def gerar_linhas_latex_tabela1(recs_llm, recs_lrm, sig_ganho_llm, sig_ganho_lrm, sig_llm_vs_lrm):
+    """Monta as linhas da Tabela 1 (comparação de acurácia e ganho) já com
+    os dois tipos de '*' aplicados nos lugares certos:
+      - '*' na ACURÁCIA do modelo vencedor (LLM ou LRM), se sig_llm_vs_lrm
+        indicar diferença estatisticamente significativa entre os modelos
+        naquela condição.
+      - '*' no GANHO de cada modelo, se sig_ganho_llm / sig_ganho_lrm
+        indicar diferença estatisticamente significativa entre Original e
+        aquela perturbação, dentro do mesmo modelo.
+    Imprime as linhas prontas para colar no corpo do \\begin{tabular} do
+    LaTeX (ajuste separador decimal vírgula/ponto conforme o \\sisetup)."""
+    print("\n" + "=" * 70)
+    print("LINHAS LATEX -- TABELA 1 (Acurácia + Ganho, com '*' nos dois tipos)")
+    print("=" * 70)
+
+    c_orig_llm, n_orig_llm, acc_orig_llm = acuracia(recs_llm, "p_original")
+    c_orig_lrm, n_orig_lrm, acc_orig_lrm = acuracia(recs_lrm, "p_original")
+
+    for campo in CAMPOS_PRED:
+        nome = NOMES_LEGIVEIS.get(campo, campo)
+        _, _, acc_llm = acuracia(recs_llm, campo)
+        _, _, acc_lrm = acuracia(recs_lrm, campo)
+
+        # '*' na acuracia: no modelo com maior acc, se diferenca LLM-vs-LRM for significativa
+        marca_llm = ""
+        marca_lrm = ""
+        if campo in sig_llm_vs_lrm and sig_llm_vs_lrm[campo][4]:
+            if acc_llm >= acc_lrm:
+                marca_llm = "*"
+            else:
+                marca_lrm = "*"
+
+        if campo == "p_original":
+            ganho_llm_str = "{--}"
+            ganho_lrm_str = "{--}"
+        else:
+            ganho_llm = 100 * (acc_llm - acc_orig_llm) / acc_orig_llm if acc_orig_llm else float("nan")
+            ganho_lrm = 100 * (acc_lrm - acc_orig_lrm) / acc_orig_lrm if acc_orig_lrm else float("nan")
+            sig_g_llm = sig_ganho_llm.get(campo, (None, None, None, None, False))[4]
+            sig_g_lrm = sig_ganho_lrm.get(campo, (None, None, None, None, False))[4]
+            ganho_llm_str = f"{ganho_llm:+.1f}{'*' if sig_g_llm else ''}"
+            ganho_lrm_str = f"{ganho_lrm:+.1f}{'*' if sig_g_lrm else ''}"
+
+        acc_llm_str = f"{acc_llm:.1f}{marca_llm}"
+        acc_lrm_str = f"{acc_lrm:.1f}{marca_lrm}"
+
+        print(
+            f"{nome} & {acc_llm_str} & \\textbf{{{acc_lrm_str}}} & "
+            f"{ganho_llm_str} & {ganho_lrm_str} \\\\"
+        )
+
+
+# ==============================================================================
 # MAIN
 # ==============================================================================
 if __name__ == "__main__":
-    llm_path = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_LLM_PATH
-    lrm_path = sys.argv[2] if len(sys.argv) > 2 else DEFAULT_LRM_PATH
+    llm_path  = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_LLM_PATH
+    lrm_path  = sys.argv[2] if len(sys.argv) > 2 else DEFAULT_LRM_PATH
+    xlsx_path = sys.argv[3] if len(sys.argv) > 3 else DEFAULT_VALIDATION_XLSX
 
     print(f"Arquivo LLM (Llama-3.1-8B-Instruct): {llm_path}")
-    print(f"Arquivo LRM (DeepSeek-R1-Distill):    {lrm_path}\n")
+    print(f"Arquivo LRM (DeepSeek-R1-Distill):    {lrm_path}")
+    print(f"Planilha de validacao (missing):      {xlsx_path}\n")
+
+    PROVEN_NEW_LABEL = load_proven_missing(xlsx_path)
+    print(f"✅ {len(PROVEN_NEW_LABEL)} ids com premissa relevante confirmada "
+          f"(relevant_found=True)\n")
 
     recs_llm = carregar(llm_path)
     recs_lrm = carregar(lrm_path)
@@ -391,8 +599,10 @@ if __name__ == "__main__":
     checar_predicoes_identicas(recs_llm, "LLM")
     checar_predicoes_identicas(recs_lrm, "LRM")
 
-    teste_mcnemar_geral(recs_llm, "LLM")
-    teste_mcnemar_geral(recs_lrm, "LRM")
+    sig_ganho_llm = teste_mcnemar_geral(recs_llm, "LLM")
+    sig_ganho_lrm = teste_mcnemar_geral(recs_lrm, "LRM")
+
+    sig_llm_vs_lrm = teste_mcnemar_llm_vs_lrm(recs_llm, recs_lrm)
 
     tabela_por_tercis(recs_llm, "LLM", campo_wc="nl_wc")
     tabela_por_tercis(recs_lrm, "LRM", campo_wc="nl_wc")
@@ -401,6 +611,8 @@ if __name__ == "__main__":
     tabela_por_bins_existentes(recs_lrm, "LRM")
 
     tabela_combinada_por_bins(recs_llm, recs_lrm, campo_pred="p_original")
+
+    gerar_linhas_latex_tabela1(recs_llm, recs_lrm, sig_ganho_llm, sig_ganho_lrm, sig_llm_vs_lrm)
 
     print(
         "\n\nLEMBRETE: os dois arquivos usados aqui sao T=0.6. Para "

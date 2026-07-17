@@ -136,6 +136,17 @@ textarea {
 .q3 { background:#2a2310; color:#f5c842; }
 .q4 { background:#2e1010; color:#e07c5c; }
 [data-baseweb="tab"] { font-family: 'JetBrains Mono', monospace !important; font-size: 12px !important; }
+.featured-badge {
+    display: inline-block;
+    padding: 3px 12px;
+    border-radius: 4px;
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 1px;
+    background: #2a2310;
+    color: #f5c842;
+    border: 1px solid #5c4a15;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -146,6 +157,18 @@ textarea {
 MAX_TOKENS_LLAMA = 32768   # limite usado na geração do llama.jsonl
 
 OVERRIDE_FILE = "overrides.json"   # arquivo de overrides manuais
+
+# IDs reprocessados manualmente (LLM sem "step by step" + LRM com teto maior
+# de tokens), com log completo de prompt+resposta salvo por task.
+FEATURED_IDS = [49, 53, 81, 84, 88, 126, 158, 166, 192, 200]
+
+# Pastas onde ficam os logs de prompt+resposta gerados durante o rerun
+# desses 10 IDs. Ajuste aqui (ou via sidebar) se a pasta de logs estiver em
+# outro lugar relativo a onde o streamlit roda -- essas pastas foram criadas
+# na maquina que rodou a geracao (deepseek-pibic) e podem precisar ser
+# copiadas (scp/rsync) para onde este app roda.
+PROMPT_LOG_DIR_DEFAULT_LLAMA = "logs_llm10ids"
+PROMPT_LOG_DIR_DEFAULT_LRM   = "logs_rerun_10ids"
 
 
 # ============================================================
@@ -220,6 +243,39 @@ def time_bar_html(value: float, max_val: float, color: str = "#f5c842") -> str:
 
 
 # ============================================================
+# HELPERS — logs de prompt (para os 10 IDs destacados)
+# ============================================================
+def extrair_secoes_log(conteudo: str):
+    """
+    Extrai (prompt, resposta) de um arquivo de log gerado por log_task_io
+    (tanto a versao usada no pibic_v2.py/LRM quanto a versao usada no
+    rerun_10ids_from_scratch.py/LLM -- os dois usam os mesmos marcadores
+    'PROMPT ENVIADO' / 'RESPOSTA DO MODELO' + linhas de '=' e '-').
+    """
+    prompt_match = re.search(
+        r"PROMPT ENVIADO.*?\n-{10,}\n(.*?)\n={10,}", conteudo, re.DOTALL
+    )
+    resposta_match = re.search(
+        r"RESPOSTA DO MODELO.*?\n-{10,}\n(.*)$", conteudo, re.DOTALL
+    )
+    prompt   = prompt_match.group(1).strip() if prompt_match else None
+    resposta = resposta_match.group(1).strip() if resposta_match else None
+    return prompt, resposta
+
+
+def carregar_log_prompt(item_id: int, tipo: str, log_dir: str):
+    """Retorna (prompt, resposta, caminho_do_arquivo). prompt/resposta vem
+    None se o arquivo nao existir ou nao puder ser parseado."""
+    path = os.path.join(log_dir, f"id_{item_id}_task_{tipo}.log")
+    if not os.path.exists(path):
+        return None, None, path
+    with open(path, "r", encoding="utf-8") as f:
+        conteudo = f.read()
+    prompt, resposta = extrair_secoes_log(conteudo)
+    return prompt, resposta, path
+
+
+# ============================================================
 # OVERRIDES — persistência em arquivo local
 # ============================================================
 def carregar_overrides() -> dict:
@@ -250,7 +306,7 @@ with st.sidebar:
 
     st.markdown("**Dataset**")
     arquivos_disponiveis = [
-        f for f in ["deepseek_consertado.jsonl", "llama_labels.jsonl"]
+        f for f in ["deepseek_consertado.jsonl", "llama_labels.jsonl", "deepseek10.jsonl"]
         if os.path.exists(f)
     ]
     if not arquivos_disponiveis:
@@ -322,7 +378,31 @@ with st.sidebar:
     ids_filtrados   = [d["id"] for d in dados_filtrados]
 
     st.markdown("---")
+    st.markdown("**⭐ Destaque**")
+    apenas_destacados = st.checkbox(
+        "Mostrar apenas os 10 exemplos com prompt salvo",
+        value=False,
+        key="dest_f",
+    )
+    if apenas_destacados:
+        ids_filtrados = [i for i in ids_filtrados if i in FEATURED_IDS]
+
+    with st.expander("⚙️ Pasta dos logs de prompt"):
+        st.caption(
+            "Os logs de prompt+resposta desses 10 IDs foram gerados na "
+            "maquina que rodou a geracao. Se este app roda em outro lugar, "
+            "copie as pastas para ca (ex.: `scp -r usuario@host:~/logs_llm10ids .`) "
+            "e ajuste os caminhos abaixo se necessario."
+        )
+        log_dir_llama = st.text_input("Pasta (LLM / Llama)", value=PROMPT_LOG_DIR_DEFAULT_LLAMA)
+        log_dir_lrm   = st.text_input("Pasta (LRM / DeepSeek)", value=PROMPT_LOG_DIR_DEFAULT_LRM)
+
+    log_dir_atual = log_dir_llama if is_llama else log_dir_lrm
+
+    st.markdown("---")
     st.markdown(f"**{len(dados_filtrados)}** / {len(dados)} exemplos")
+    if apenas_destacados:
+        st.markdown(f"**{len(ids_filtrados)}** / {len(FEATURED_IDS)} destacados (apos filtros)")
 
     if not ids_filtrados:
         st.warning("Nenhum exemplo com esses filtros.")
@@ -331,7 +411,12 @@ with st.sidebar:
     st.markdown("**Exemplo**")
     col_a, col_b = st.columns([3, 1])
     with col_a:
-        id_escolhido = st.selectbox("ID", ids_filtrados, label_visibility="collapsed")
+        id_escolhido = st.selectbox(
+            "ID",
+            ids_filtrados,
+            format_func=lambda x: f"⭐ {x}" if x in FEATURED_IDS else str(x),
+            label_visibility="collapsed",
+        )
     with col_b:
         idx_atual = ids_filtrados.index(id_escolhido)
         if st.button("▶", help="Próximo"):
@@ -386,11 +471,14 @@ else:
 
 acertou = str(pred_efetivo).lower() == str(gt).lower()
 
+tem_prompt_log = id_escolhido in FEATURED_IDS
+
 
 # ============================================================
 # CABEÇALHO
 # ============================================================
-st.markdown(f"# Exemplo `{id_escolhido}` — _{tipo}_")
+titulo_extra = " &nbsp; <span class='featured-badge'>⭐ destacado</span>" if tem_prompt_log else ""
+st.markdown(f"# Exemplo `{id_escolhido}` — _{tipo}_{titulo_extra}", unsafe_allow_html=True)
 
 c1, c2, c3, c4 = st.columns([2, 2, 2, 1])
 with c1:
@@ -412,12 +500,20 @@ st.markdown("---")
 # TABS
 # ============================================================
 tab_labels = ["📊 Métricas", "🧩 Complexidade", "🧠 Resposta", "⏱ Ranking"]
+if tem_prompt_log:
+    tab_labels.append("📝 Prompt")
 if is_llama:
     tab_labels.append("✏️ Override")
 
 tabs = st.tabs(tab_labels)
 tab1, tab2, tab3, tab4 = tabs[0], tabs[1], tabs[2], tabs[3]
-tab5 = tabs[4] if is_llama else None
+
+_idx_next  = 4
+tab_prompt = None
+if tem_prompt_log:
+    tab_prompt = tabs[_idx_next]
+    _idx_next += 1
+tab5 = tabs[_idx_next] if is_llama else None
 
 
 # ---------- TAB 1: Métricas ----------
@@ -587,10 +683,11 @@ with tab4:
             tps_str   = f"{r['tps']:.1f}" if r["tps"] else "—"
             tok_str   = f"{int(r['tokens']):,}" if r["tokens"] else "—"
             qual_html = qlabel_html(r["qualidade"]) if is_llama else ""
+            estrela   = "⭐ " if r["id"] in FEATURED_IDS else ""
             linhas.append(f"""<tr class="{row_cls}">
                 <td style="color:#555c72">{i+1}</td>
                 <td class="rank-medal">{medal}</td>
-                <td style="font-weight:600;color:{'#f5c842' if is_cur else '#c8cdd8'}">{'› ' if is_cur else ''}{r['id']}</td>
+                <td style="font-weight:600;color:{'#f5c842' if is_cur else '#c8cdd8'}">{'› ' if is_cur else ''}{estrela}{r['id']}</td>
                 <td><span style="font-weight:600;color:#f5f6f8">{r['time']:.3f}s</span> &nbsp; {time_bar_html(r['time'],max_time,cor_barra)}</td>
                 <td>{badge_html(r['gt'])}</td>
                 <td>{badge_html(r['pred'])}</td>
@@ -613,7 +710,36 @@ with tab4:
             st.caption(f"ℹ️ Exemplo `{id_escolhido}` está na posição **{pos}** de {total}.")
 
 
-# ---------- TAB 5: Override manual (só llama) ----------
+# ---------- TAB PROMPT: só para os 10 IDs destacados ----------
+if tem_prompt_log and tab_prompt is not None:
+    with tab_prompt:
+        st.markdown("")
+        prompt_txt, resposta_log, log_path = carregar_log_prompt(id_escolhido, tipo, log_dir_atual)
+
+        if prompt_txt is None:
+            st.warning(
+                f"Log não encontrado em `{log_path}`.\n\n"
+                "Confira se a pasta de logs foi copiada para este servidor "
+                "(veja **⚙️ Pasta dos logs de prompt** na sidebar) e se o "
+                "nome do arquivo bate com `id_<id>_task_<task>.log`."
+            )
+        else:
+            st.markdown("##### Prompt enviado ao modelo")
+            st.caption("Texto completo, já após `apply_chat_template` — exatamente o que foi tokenizado e enviado.")
+            st.markdown(f'<div class="resp-box">{prompt_txt}</div>', unsafe_allow_html=True)
+            st.markdown("")
+            if st.button("📋 Mostrar prompt como código", key="prompt_code_btn"):
+                st.code(prompt_txt, language="text")
+
+            if resposta_log is not None:
+                st.markdown("---")
+                st.markdown("##### Resposta salva no log (para conferência)")
+                st.caption("Deve ser idêntica à aba 🧠 Resposta — vem do mesmo arquivo de log.")
+                with st.expander("Ver resposta do log"):
+                    st.markdown(f'<div class="resp-box">{resposta_log}</div>', unsafe_allow_html=True)
+
+
+# ---------- TAB 5 (ou 6): Override manual (só llama) ----------
 if is_llama and tab5 is not None:
     with tab5:
         st.markdown("")
